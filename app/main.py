@@ -1,25 +1,35 @@
 from fastapi import FastAPI
-from app.api.v1 import auth
-from app.api.v1 import students, courses, auth, analytics
 from app.db.sql_db import Base, engine
-from app.models.sqlalchemy_models import *   # import all models
+
+# ⚠️ Import all models explicitly so metadata knows them
+from app.models.sqlalchemy_models import (
+    UserModel,
+    Course,
+    Student,
+    Lecturer,
+    Enrollment,
+    # include every SQLAlchemy model class you defined
+)
+
+from app.api.v1 import auth, students, courses, analytics
 
 app = FastAPI(
     title="School Management API",
     description="A modular backend for managing students, courses, and authentication.",
     version="1.0.0"
 )
-app.include_router(auth.router)
 
-# Include Routers (instead of writing endpoints here)
+@app.on_event("startup")
+def create_tables():
+    print("🔧 Creating tables if missing…")
+    Base.metadata.create_all(bind=engine)
+    print("✅ Tables ready!")
+
+# Include routers
 app.include_router(auth.router)
 app.include_router(students.router)
 app.include_router(courses.router)
 app.include_router(analytics.router)
-
-@app.on_event("startup")
-def create_tables():
-    Base.metadata.create_all(bind=engine)
 
 @app.get("/")
 def root():
