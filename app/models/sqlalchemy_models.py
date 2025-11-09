@@ -53,6 +53,13 @@ class Course(Base):
     enrollments = relationship("Enrollment", back_populates="course")
 
 
+class Lecturer(Base):
+    __tablename__ = "lecturers"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    department = Column(String, nullable=True)
+    email = Column(String, unique=True, nullable=False)
+
 # ---------- Enrollments Table ----------
 class Enrollment(Base):
     __tablename__ = "enrollments"
