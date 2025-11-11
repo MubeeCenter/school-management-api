@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from sqlalchemy import inspect
 from app.db.sql_db import Base, engine
 
 # ⚠️ Import all models explicitly so metadata knows them
@@ -21,11 +22,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
 @app.on_event("startup")
 def create_tables():
-    print("🔧 Creating tables if missing…")
-    Base.metadata.create_all(bind=engine)
-    print("✅ Tables ready!")
+    print("🔧 Checking tables…")
+    inspector = inspect(engine)
+    existing_tables = inspector.get_table_names()
+
+    if not existing_tables:
+        print("🆕 No tables found — creating fresh schema…")
+        Base.metadata.create_all(bind=engine)
+    else:
+        print(f"✅ Tables already exist: {existing_tables}")
+
 
 # Include routers
 app.include_router(auth.router)
@@ -33,9 +42,11 @@ app.include_router(students.router)
 app.include_router(courses.router)
 app.include_router(analytics.router)
 
+
 @app.get("/")
 def root():
     return {"message": "Welcome to School Management API 🚀"}
+
 
 @app.get("/healthz")
 def health_check():
