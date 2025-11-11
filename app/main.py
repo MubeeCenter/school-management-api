@@ -25,15 +25,19 @@ app = FastAPI(
 
 @app.on_event("startup")
 def create_tables():
-    print("🔧 Checking tables…")
+    print("🔧 Checking existing tables …")
     inspector = inspect(engine)
-    existing_tables = inspector.get_table_names()
-
-    if not existing_tables:
-        print("🆕 No tables found — creating fresh schema…")
-        Base.metadata.create_all(bind=engine)
-    else:
-        print(f"✅ Tables already exist: {existing_tables}")
+    try:
+        existing_tables = inspector.get_table_names()
+        if existing_tables:
+            print(f"✅ Existing tables found: {existing_tables}")
+        else:
+            print("🆕 No tables found — creating schema …")
+            Base.metadata.create_all(bind=engine)
+            print("✅ Tables created successfully!")
+    except Exception as e:
+        # Prevent crash if another worker already created them
+        print(f"⚠️ Skipping table creation due to: {e}")
 
 
 # Include routers
