@@ -6,7 +6,8 @@ pydantic
 pydantic[email]
 pydantic-settings
 python-jose[cryptography]
-passlib[bcrypt]
+passlib==1.7.4
 python-dotenv
 python-multipart
 certifi
+bcrypt==3.2.2
