@@ -1,30 +1,34 @@
+# app/main.py
+
 from fastapi import FastAPI
 from sqlalchemy import inspect
 from app.db.sql_db import Base, engine
 
-# ⚠️ Import all models explicitly so metadata knows them
+# ⚠️ Import all SQLAlchemy models so metadata recognizes them
 from app.models.sqlalchemy_models import (
     UserModel,
     Course,
     Student,
     Lecturer,
     Enrollment,
-    # include every SQLAlchemy model class you defined
 )
 
-# from app.db.mongo_db import mongo_client  # temporarily disabled (Mongo not yet implemented)
-
-from app.api.v1 import auth, students, courses, analytics
+# from app.db.mongo_db import mongo_client  # (optional, for analytics)
+from app.api.v1 import auth, students, courses, lecturers, analytics
 
 app = FastAPI(
     title="School Management API",
-    description="A modular backend for managing students, courses, and authentication.",
-    version="1.0.0"
+    description=(
+        "A modular backend for managing students, lecturers, courses, "
+        "and analytics with authentication and role-based access control."
+    ),
+    version="2.0.0"
 )
 
 
 @app.on_event("startup")
 def create_tables():
+    """Ensure database tables exist when the app starts."""
     print("🔧 Checking existing tables …")
     inspector = inspect(engine)
     try:
@@ -36,22 +40,25 @@ def create_tables():
             Base.metadata.create_all(bind=engine)
             print("✅ Tables created successfully!")
     except Exception as e:
-        # Prevent crash if another worker already created them
         print(f"⚠️ Skipping table creation due to: {e}")
 
 
-# Include routers
+# 🔗 Include routers
+# (each router has its own prefix & tags defined inside the module)
 app.include_router(auth.router)
 app.include_router(students.router)
 app.include_router(courses.router)
+app.include_router(lecturers.router)
 app.include_router(analytics.router)
 
 
-@app.get("/")
+# 🌍 Basic public routes
+@app.get("/", tags=["Root"])
 def root():
     return {"message": "Welcome to School Management API 🚀"}
 
 
-@app.get("/healthz")
+@app.get("/healthz", tags=["Health"])
 def health_check():
-    return {"status": "ok"}
+    """Simple health check for Railway / UptimeRobot."""
+    return {"status": "ok", "service": "school-management-api"}
