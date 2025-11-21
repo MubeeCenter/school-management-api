@@ -1,14 +1,22 @@
+# app/models/pydantic_models.py
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
+# NOTE: For Pydantic v2 compatibility we include model_config.
+# For v1 compatibility we keep a Config inner class with from_attributes=True.
+# Adjust if your project uses strictly v2 or v1.
 
 # ============================
 # AUTH / USER SCHEMAS
 # ============================
-
 class UserBase(BaseModel):
     username: str
     role: Optional[str] = "student"
+
+    model_config = {"from_attributes": True}
+
+    class Config:
+        from_attributes = True
 
 
 class UserCreate(UserBase):
@@ -23,8 +31,10 @@ class UserLogin(BaseModel):
 class UserOut(UserBase):
     id: int
 
+    model_config = {"from_attributes": True}
+
     class Config:
-        from_attributes = True   # Pydantic v2 compatible
+        from_attributes = True
 
 
 class TokenResponse(BaseModel):
@@ -35,12 +45,16 @@ class TokenResponse(BaseModel):
 # ============================
 # STUDENT SCHEMAS
 # ============================
-
 class StudentBase(BaseModel):
     name: str
-    age: int
-    gender: str
-    email: EmailStr
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+    model_config = {"from_attributes": True}
+
+    class Config:
+        from_attributes = True
 
 
 class StudentCreate(StudentBase):
@@ -57,6 +71,8 @@ class StudentUpdate(BaseModel):
 class StudentOut(StudentBase):
     id: int
 
+    model_config = {"from_attributes": True}
+
     class Config:
         from_attributes = True
 
@@ -64,10 +80,15 @@ class StudentOut(StudentBase):
 # ============================
 # LECTURER SCHEMAS
 # ============================
-
 class LecturerBase(BaseModel):
     name: str
     department: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+    model_config = {"from_attributes": True}
+
+    class Config:
+        from_attributes = True
 
 
 class LecturerCreate(LecturerBase):
@@ -77,10 +98,13 @@ class LecturerCreate(LecturerBase):
 class LecturerUpdate(BaseModel):
     name: Optional[str] = None
     department: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 
 class LecturerOut(LecturerBase):
     id: int
+
+    model_config = {"from_attributes": True}
 
     class Config:
         from_attributes = True
@@ -89,13 +113,16 @@ class LecturerOut(LecturerBase):
 # ============================
 # COURSE SCHEMAS
 # ============================
-
 class CourseBase(BaseModel):
     title: str
     code: str
-    unit: int
     semester: str
     lecturer_id: Optional[int] = None
+
+    model_config = {"from_attributes": True}
+
+    class Config:
+        from_attributes = True
 
 
 class CourseCreate(CourseBase):
@@ -105,13 +132,14 @@ class CourseCreate(CourseBase):
 class CourseUpdate(BaseModel):
     title: Optional[str] = None
     code: Optional[str] = None
-    unit: Optional[int] = None
     semester: Optional[str] = None
     lecturer_id: Optional[int] = None
 
 
 class CourseOut(CourseBase):
     id: int
+
+    model_config = {"from_attributes": True}
 
     class Config:
         from_attributes = True
@@ -120,12 +148,15 @@ class CourseOut(CourseBase):
 # ============================
 # ENROLLMENT SCHEMAS
 # ============================
-
 class EnrollmentBase(BaseModel):
     student_id: int
     course_id: int
     grade: Optional[float] = None
-    semester: Optional[str] = None   # included if present in SQL table
+
+    model_config = {"from_attributes": True}
+
+    class Config:
+        from_attributes = True
 
 
 class EnrollmentCreate(EnrollmentBase):
@@ -134,20 +165,20 @@ class EnrollmentCreate(EnrollmentBase):
 
 class EnrollmentUpdate(BaseModel):
     grade: Optional[float] = None
-    semester: Optional[str] = None
 
 
 class EnrollmentOut(EnrollmentBase):
     id: int
+
+    model_config = {"from_attributes": True}
 
     class Config:
         from_attributes = True
 
 
 # ============================
-# ANALYTICS SCHEMAS
+# ANALYTICS SCHEMAS (optional)
 # ============================
-
 class GPAAnalytics(BaseModel):
     course_name: str
     course_code: Optional[str] = None

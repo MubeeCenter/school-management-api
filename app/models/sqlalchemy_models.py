@@ -1,7 +1,7 @@
+# app/models/sqlalchemy_models.py
 from sqlalchemy import Column, Integer, String, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from app.db.sql_db import Base
-
 
 # ===========================
 #   USERS TABLE
@@ -15,9 +15,9 @@ class UserModel(Base):
     password = Column(String, nullable=False)
     role = Column(String, default="student")
 
-    # One-to-one relationship with Student
+    # One-to-one relationship with Student (optional)
     student_id = Column(Integer, ForeignKey("students.id"), nullable=True)
-    student = relationship("Student", back_populates="user")
+    student = relationship("Student", back_populates="user", uselist=False)
 
 
 # ===========================
@@ -37,7 +37,7 @@ class Student(Base):
     user = relationship("UserModel", back_populates="student", uselist=False)
 
     # Relationship to Enrollments
-    enrollments = relationship("Enrollment", back_populates="student")
+    enrollments = relationship("Enrollment", back_populates="student", cascade="all, delete-orphan")
 
     def as_dict(self):
         return {
@@ -62,7 +62,7 @@ class Lecturer(Base):
     email = Column(String, unique=True, nullable=False)
 
     # One-to-many: a lecturer can teach multiple courses
-    courses = relationship("Course", back_populates="lecturer")
+    courses = relationship("Course", back_populates="lecturer", cascade="all, delete-orphan")
 
 
 # ===========================
@@ -81,7 +81,7 @@ class Course(Base):
     lecturer = relationship("Lecturer", back_populates="courses")
 
     # Relationship to Enrollments
-    enrollments = relationship("Enrollment", back_populates="course")
+    enrollments = relationship("Enrollment", back_populates="course", cascade="all, delete-orphan")
 
 
 # ===========================
@@ -91,9 +91,9 @@ class Enrollment(Base):
     __tablename__ = "enrollments"
 
     id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("students.id"))
-    course_id = Column(Integer, ForeignKey("courses.id"))
-    grade = Column(Float)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    grade = Column(Float, nullable=True)
 
     # Relationships
     student = relationship("Student", back_populates="enrollments")
