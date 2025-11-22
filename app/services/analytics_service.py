@@ -1,5 +1,7 @@
 # app/services/analytics_service.py
+
 from app.repositories.mongo_repo import MongoRepository
+
 
 class AnalyticsService:
     """
@@ -11,14 +13,14 @@ class AnalyticsService:
 
     def get_average_gpa(self):
         """
-        Fetches average GPA per course.
+        Fetch average GPA per course.
         """
-        results = self.repo.average_gpa_per_course()
+        results = self.repo.gpa_by_course()   # FIXED
         if not results:
             return {"message": "No GPA records found"}
         return results
 
-    def get_top_students(self, limit=5):
+    def get_top_students(self, limit: int = 5):
         """
         Returns the top N students by GPA.
         """
