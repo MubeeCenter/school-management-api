@@ -1,22 +1,18 @@
-# app/models/pydantic_models.py
+# app/models/pydantic.py
+
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
-# NOTE: For Pydantic v2 compatibility we include model_config.
-# For v1 compatibility we keep a Config inner class with from_attributes=True.
-# Adjust if your project uses strictly v2 or v1.
 
 # ============================
 # AUTH / USER SCHEMAS
 # ============================
+
 class UserBase(BaseModel):
     username: str
     role: Optional[str] = "student"
 
     model_config = {"from_attributes": True}
-
-    class Config:
-        from_attributes = True
 
 
 class UserCreate(UserBase):
@@ -33,9 +29,6 @@ class UserOut(UserBase):
 
     model_config = {"from_attributes": True}
 
-    class Config:
-        from_attributes = True
-
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -45,6 +38,7 @@ class TokenResponse(BaseModel):
 # ============================
 # STUDENT SCHEMAS
 # ============================
+
 class StudentBase(BaseModel):
     name: str
     age: Optional[int] = None
@@ -52,9 +46,6 @@ class StudentBase(BaseModel):
     email: Optional[EmailStr] = None
 
     model_config = {"from_attributes": True}
-
-    class Config:
-        from_attributes = True
 
 
 class StudentCreate(StudentBase):
@@ -73,22 +64,17 @@ class StudentOut(StudentBase):
 
     model_config = {"from_attributes": True}
 
-    class Config:
-        from_attributes = True
-
 
 # ============================
 # LECTURER SCHEMAS
 # ============================
+
 class LecturerBase(BaseModel):
     name: str
     department: Optional[str] = None
     email: Optional[EmailStr] = None
 
     model_config = {"from_attributes": True}
-
-    class Config:
-        from_attributes = True
 
 
 class LecturerCreate(LecturerBase):
@@ -106,13 +92,11 @@ class LecturerOut(LecturerBase):
 
     model_config = {"from_attributes": True}
 
-    class Config:
-        from_attributes = True
-
 
 # ============================
 # COURSE SCHEMAS
 # ============================
+
 class CourseBase(BaseModel):
     title: str
     code: str
@@ -120,9 +104,6 @@ class CourseBase(BaseModel):
     lecturer_id: Optional[int] = None
 
     model_config = {"from_attributes": True}
-
-    class Config:
-        from_attributes = True
 
 
 class CourseCreate(CourseBase):
@@ -141,22 +122,17 @@ class CourseOut(CourseBase):
 
     model_config = {"from_attributes": True}
 
-    class Config:
-        from_attributes = True
-
 
 # ============================
 # ENROLLMENT SCHEMAS
 # ============================
+
 class EnrollmentBase(BaseModel):
     student_id: int
     course_id: int
     grade: Optional[float] = None
 
     model_config = {"from_attributes": True}
-
-    class Config:
-        from_attributes = True
 
 
 class EnrollmentCreate(EnrollmentBase):
@@ -172,13 +148,11 @@ class EnrollmentOut(EnrollmentBase):
 
     model_config = {"from_attributes": True}
 
-    class Config:
-        from_attributes = True
-
 
 # ============================
-# ANALYTICS SCHEMAS (optional)
+# ANALYTICS SCHEMAS
 # ============================
+
 class GPAAnalytics(BaseModel):
     course_name: str
     course_code: Optional[str] = None
