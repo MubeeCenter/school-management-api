@@ -1,88 +1,190 @@
 🎓 School Management API
-FastAPI • SQLAlchemy • SQLite • MongoDB • JWT Authentication • Analytics
+FastAPI • SQLAlchemy • SQLite • MongoDB • JWT • Analytics
+A production-ready backend system for managing academic operations — students, courses, lecturers, enrollments, grading, and performance analytics.
+This project follows clean architecture principles, integrates relational and NoSQL databases, supports secure role-based authentication, and exposes BI-optimized analytics endpoints suitable for Power BI, Tableau, Metabase, and Grafana.
 
-A modern, production-ready backend system for managing students, courses, lecturers, and academic analytics.
-This API implements clean architecture, secure authentication, dual-database integration, and Power BI–ready endpoints.
+🚀 Key Features
+🔐 Authentication & Authorization
 
-🚀 Features
-🔐 Authentication
 
-POST /auth/register — Register new user
+JWT-based authentication
 
-POST /auth/login — Login and obtain JWT token
 
-Supports roles:
+Secure password hashing (bcrypt)
 
-Admin
 
-Lecturer
+Role-based access control (RBAC)
 
-Student
 
-👨‍🎓 Students
+Supported Roles
 
-GET /students/ — Get all students
+
+Admin — full system access
+
+
+Lecturer — course & grading access
+
+
+Student — personal academic data
+
+
+Endpoints
+
+
+POST /auth/register — Register a new user
+
+
+POST /auth/login — Authenticate and receive JWT token
+
+
+
+👨‍🎓 Student Management
+
+
+Full CRUD operations
+
+
+GPA calculation per student
+
+
+Authenticated access to personal academic performance
+
+
+Endpoints
+
+
+GET /students/ — Retrieve all students
+
 
 POST /students/ — Create student
 
-GET /students/{student_id} — Get student
+
+GET /students/{student_id} — Retrieve student
+
 
 PUT /students/{student_id} — Update student
 
+
 DELETE /students/{student_id} — Delete student
 
-GET /students/me/gpa — Get current user's GPA
 
-📘 Courses
+GET /students/me/gpa — Get authenticated student GPA
 
-GET /courses/ — Get all courses
 
-POST /courses/ — Create course
 
-GET /courses/{course_id} — Get a course
+📘 Course Management
 
-PUT /courses/{course_id} — Update course
 
-DELETE /courses/{course_id} — Delete course
+Course creation and maintenance
 
-👨‍🏫 Lecturers
 
-GET /lecturers/ — Get all lecturers
+Lecturer assignment
 
-POST /lecturers/ — Create lecturer
 
-GET /lecturers/{lecturer_id} — Get lecturer
+Enrollment tracking
 
-PUT /lecturers/{lecturer_id} — Update lecturer
 
-DELETE /lecturers/{lecturer_id} — Delete lecturer
+Endpoints
 
-📊 Analytics (MongoDB)
+
+GET /courses/
+
+
+POST /courses/
+
+
+GET /courses/{course_id}
+
+
+PUT /courses/{course_id}
+
+
+DELETE /courses/{course_id}
+
+
+
+👨‍🏫 Lecturer Management
+
+
+Lecturer profiles
+
+
+Course associations
+
+
+Performance visibility via analytics
+
+
+Endpoints
+
+
+GET /lecturers/
+
+
+POST /lecturers/
+
+
+GET /lecturers/{lecturer_id}
+
+
+PUT /lecturers/{lecturer_id}
+
+
+DELETE /lecturers/{lecturer_id}
+
+
+
+📊 Analytics & BI Integration (MongoDB)
+Analytical data is synchronized from the transactional SQL database into MongoDB for fast aggregation and reporting.
+Endpoints
+
 
 GET /analytics/gpa — Average GPA per course
 
-GET /analytics/top-students — Top students by GPA
 
-GET /analytics/enrollments — Course enrollment count
+GET /analytics/top-students — Top-performing students
 
-These endpoints are optimized for BI tools like Power BI, Tableau, Metabase, and Grafana.
 
-🏥 Health & Root
+GET /analytics/enrollments — Enrollment counts per course
 
-GET / — API home route
 
-GET /healthz — Health check endpoint
+✅ Optimized for:
 
-🧱 Tech Stack
-Layer	Technology
-Framework	FastAPI
-ORM	SQLAlchemy
-Databases	SQLite (transactions), MongoDB Atlas (analytics)
-Auth	JWT (python-jose)
-Hashing	passlib[bcrypt]
-Config	pydantic-settings
-Server	Uvicorn
-Optional	Docker, Docker Compose
+
+Power BI
+
+
+Tableau
+
+
+Metabase
+
+
+Grafana
+
+
+
+🏥 System & Monitoring
+
+
+Health check endpoint for deployment monitoring
+
+
+Root API welcome route
+
+
+Endpoints
+
+
+GET / — API root
+
+
+GET /healthz — Health check
+
+
+
+🧱 Technology Stack
+LayerTechnologyAPI FrameworkFastAPIORMSQLAlchemyRelational DBSQLite (OLTP)Analytics DBMongoDB Atlas (OLAP)AuthenticationJWT (python-jose)Password Hashingpasslib (bcrypt)Configurationpydantic-settingsASGI ServerUvicornDevOps (Optional)Docker & Docker Compose
 
 📁 Project Structure
 app/
@@ -96,8 +198,8 @@ app/
  │   ├── security.py
  │   ├── exceptions.py
  │   └── utils.py
- ├── services/
- ├── repositories/
+ ├── services/        # Business logic layer
+ ├── repositories/    # Data access layer
  ├── models/
  │   ├── pydantic_schemas.py
  │   └── sqlalchemy_models.py
@@ -106,3 +208,42 @@ app/
  │   └── mongo_db.py
  ├── main.py
  └── config.py
+
+
+🔄 Data Architecture Overview
+FastAPI API
+   ↓
+SQLite (Transactional Data)
+   ↓ ETL Sync
+MongoDB (Analytics / Aggregations)
+   ↓
+Power BI / Tableau Dashboards
+
+
+📜 API Documentation
+Interactive API documentation is automatically generated by FastAPI:
+
+
+Swagger UI: http://localhost:8000/docs
+
+
+ReDoc: http://localhost:8000/redoc
+
+
+
+⚙️ Local Setup
+git clone <repo-url>
+cd school-management-api
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+
+
+🎯 Project Status
+✔ Clean architecture implemented
+✔ Secure authentication & authorization
+✔ Dual-database integration (SQL + NoSQL)
+✔ Analytics-ready endpoints
+✔ Portfolio-grade backend system
+This project demonstrates junior backend / data engineering competency and mirrors real-world enterprise backend design.

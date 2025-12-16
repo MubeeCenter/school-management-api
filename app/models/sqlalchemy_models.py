@@ -1,11 +1,10 @@
-# app/models/sqlalchemy_models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime, func, Index
 from sqlalchemy.orm import relationship
 from app.db.sql_db import Base
 
-# ===========================
+# =====================================================
 #   USERS TABLE
-# ===========================
+# =====================================================
 class UserModel(Base):
     __tablename__ = "users"
 
@@ -15,14 +14,27 @@ class UserModel(Base):
     password = Column(String, nullable=False)
     role = Column(String, default="student")
 
-    # One-to-one relationship with Student (optional)
     student_id = Column(Integer, ForeignKey("students.id"), nullable=True)
-    student = relationship("Student", back_populates="user", uselist=False)
+
+    student = relationship(
+        "Student",
+        back_populates="user",
+        uselist=False,
+        lazy="joined",
+        viewonly=True
+    )
+
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
+    __table_args__ = (
+        Index("idx_user_username", "username"),
+    )
 
 
-# ===========================
+# =====================================================
 #   STUDENTS TABLE
-# ===========================
+# =====================================================
 class Student(Base):
     __tablename__ = "students"
 
@@ -31,28 +43,33 @@ class Student(Base):
     age = Column(Integer)
     gender = Column(String)
     email = Column(String, unique=True)
-    username = Column(String, unique=True, nullable=True)
+    username = Column(String, nullable=True)
 
-    # Relationship back to User
-    user = relationship("UserModel", back_populates="student", uselist=False)
+    user = relationship(
+        "UserModel",
+        back_populates="student",
+        uselist=False,
+        lazy="joined",
+        viewonly=True
+    )
 
-    # Relationship to Enrollments
-    enrollments = relationship("Enrollment", back_populates="student", cascade="all, delete-orphan")
+    enrollments = relationship(
+        "Enrollment",
+        back_populates="student",
+        cascade="all, delete-orphan"
+    )
 
-    def as_dict(self):
-        return {
-            "id": self.id,
-            "name": self.name,
-            "age": self.age,
-            "gender": self.gender,
-            "email": self.email,
-            "username": self.username,
-        }
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
+    __table_args__ = (
+        Index("idx_student_email", "email"),
+    )
 
 
-# ===========================
+# =====================================================
 #   LECTURERS TABLE
-# ===========================
+# =====================================================
 class Lecturer(Base):
     __tablename__ = "lecturers"
 
@@ -61,13 +78,19 @@ class Lecturer(Base):
     department = Column(String, nullable=True)
     email = Column(String, unique=True, nullable=False)
 
-    # One-to-many: a lecturer can teach multiple courses
-    courses = relationship("Course", back_populates="lecturer", cascade="all, delete-orphan")
+    courses = relationship(
+        "Course",
+        back_populates="lecturer",
+        cascade="all, delete-orphan"
+    )
+
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
 
 
-# ===========================
+# =====================================================
 #   COURSES TABLE
-# ===========================
+# =====================================================
 class Course(Base):
     __tablename__ = "courses"
 
@@ -75,26 +98,68 @@ class Course(Base):
     title = Column(String, nullable=False)
     code = Column(String, unique=True, nullable=False)
     semester = Column(String, nullable=False)
+    credits = Column(Integer, default=3)
     lecturer_id = Column(Integer, ForeignKey("lecturers.id"), nullable=True)
 
-    # Relationship back to Lecturer
     lecturer = relationship("Lecturer", back_populates="courses")
 
-    # Relationship to Enrollments
-    enrollments = relationship("Enrollment", back_populates="course", cascade="all, delete-orphan")
+    enrollments = relationship(
+        "Enrollment",
+        back_populates="course",
+        cascade="all, delete-orphan"
+    )
+
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
+    __table_args__ = (
+        Index("idx_course_code", "code"),
+    )
 
 
-# ===========================
+# =====================================================
 #   ENROLLMENTS TABLE
-# ===========================
+# =====================================================
 class Enrollment(Base):
     __tablename__ = "enrollments"
 
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
-    grade = Column(Float, nullable=True)
 
-    # Relationships
+    grade = Column(Float, nullable=True)
+    gpa = Column(Float, nullable=True)
+
     student = relationship("Student", back_populates="enrollments")
     course = relationship("Course", back_populates="enrollments")
+
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
+    __table_args__ = (
+        Index("idx_enrollments_student", "student_id"),
+        Index("idx_enrollments_course", "course_id"),
+    )
+# =====================================================
+#   GRADES TABLE ✅ (NEW)
+# =====================================================
+class Grade(Base):
+    __tablename__ = "grades"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+
+    score = Column(Float, nullable=False)
+
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
+    __table_args__ = (
+        Index("idx_grade_student", "student_id"),
+        Index("idx_grade_course", "course_id"),
+    )
+__table_args__ = (
+    Index("uq_student_course", "student_id", "course_id", unique=True),
+)
+role = Column(String, default="student", nullable=False)

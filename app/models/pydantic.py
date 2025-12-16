@@ -1,15 +1,14 @@
-# app/models/pydantic.py
-
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional, List, Dict, Any
 
 
-# ============================
+# =====================================================
 # AUTH / USER SCHEMAS
-# ============================
+# =====================================================
 
 class UserBase(BaseModel):
     username: str
+    # Allow role assignment from tests and admin route
     role: Optional[str] = "student"
 
     model_config = {"from_attributes": True}
@@ -35,9 +34,9 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-# ============================
+# =====================================================
 # STUDENT SCHEMAS
-# ============================
+# =====================================================
 
 class StudentBase(BaseModel):
     name: str
@@ -65,9 +64,9 @@ class StudentOut(StudentBase):
     model_config = {"from_attributes": True}
 
 
-# ============================
+# =====================================================
 # LECTURER SCHEMAS
-# ============================
+# =====================================================
 
 class LecturerBase(BaseModel):
     name: str
@@ -93,9 +92,9 @@ class LecturerOut(LecturerBase):
     model_config = {"from_attributes": True}
 
 
-# ============================
+# =====================================================
 # COURSE SCHEMAS
-# ============================
+# =====================================================
 
 class CourseBase(BaseModel):
     title: str
@@ -123,9 +122,9 @@ class CourseOut(CourseBase):
     model_config = {"from_attributes": True}
 
 
-# ============================
+# =====================================================
 # ENROLLMENT SCHEMAS
-# ============================
+# =====================================================
 
 class EnrollmentBase(BaseModel):
     student_id: int
@@ -149,9 +148,9 @@ class EnrollmentOut(EnrollmentBase):
     model_config = {"from_attributes": True}
 
 
-# ============================
+# =====================================================
 # ANALYTICS SCHEMAS
-# ============================
+# =====================================================
 
 class GPAAnalytics(BaseModel):
     course_name: str
@@ -170,3 +169,48 @@ class EnrollmentAnalytics(BaseModel):
     course_name: str
     course_code: Optional[str] = None
     enrollment_count: int
+
+
+# =====================================================
+# MACHINE LEARNING / PREDICTION SCHEMAS
+# =====================================================
+
+class RiskPredictRequest(BaseModel):
+    student_id: int
+    features: Dict[str, float]
+
+
+class RiskPredictOut(BaseModel):
+    student_id: int
+    risk_prob: float
+
+
+class GPAPredictRequest(BaseModel):
+    student_id: int
+    features: Dict[str, float]
+
+
+class GPAPredictOut(BaseModel):
+    student_id: int
+    predicted_gpa: float
+
+
+class CourseRecommendationRequest(BaseModel):
+    student_id: int
+    history: List[int]
+
+
+class CourseRecommendationOut(BaseModel):
+    student_id: int
+    recommended_courses: List[Dict[str, Any]]
+# =====================================================
+# GRADE SCHEMAS ✅ (FIXED)
+# =====================================================
+
+class GradeCreate(BaseModel):
+    student_id: int
+    course_id: int
+    score: float
+
+    model_config = {"from_attributes": True}
+

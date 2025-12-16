@@ -1,0 +1,11 @@
+route:
+  receiver: "email-alert"
+
+receivers:
+  - name: "email-alert"
+    email_configs:
+      - to: "admin@example.com"
+        from: "monitor@example.com"
+        smarthost: smtp.example.com:587
+        auth_username: monitor@example.com
+        auth_password: "PASSWORD"

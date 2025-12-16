@@ -7,7 +7,11 @@ from app.models.pydantic import UserCreate, UserOut, TokenResponse
 from app.services.auth_service import AuthService
 from app.core.security import role_required
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(
+    prefix="/auth",
+    tags=["Authentication"],
+    dependencies=[]
+)
 
 
 def get_auth_service(db: Session = Depends(get_db)):
@@ -30,28 +34,35 @@ def register_user(
 
 
 # ----------------------------------------------------
-# LOGIN (Via OAuth2 in Swagger)
+# LOGIN (OAuth2 Form)
 # ----------------------------------------------------
 @router.post(
     "/login",
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
 )
-def login_user(
+async def login_user(
     form_data: OAuth2PasswordRequestForm = Depends(),
     auth_service: AuthService = Depends(get_auth_service)
 ):
     """
-    Accepts form data:
-       username=...
-       password=...
-    This allows full Swagger OAuth2 login.
+    Accepts:
+      username=...
+      password=...
+    Must be sent as: application/x-www-form-urlencoded
     """
+
+    # 🔥 DEBUG (safe version — does NOT read raw body)
+    print("\n====================== LOGIN DEBUG ======================")
+    print("📌 Parsed username:", form_data.username)
+    print("📌 Parsed password:", form_data.password)
+    print("=========================================================\n")
+
     return auth_service.login_user(form_data)
 
 
 # ----------------------------------------------------
-# Admin-Only User Registration
+# Admin Registration
 # ----------------------------------------------------
 @router.post(
     "/admin/register",

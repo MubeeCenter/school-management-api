@@ -1,11 +1,14 @@
 """
-MongoDB connection + collections + sync helpers.
+MongoDB connection + collections + sync helpers + ML feeds + Realtime support.
 """
 
 from pymongo import MongoClient, errors
 from app.config import settings
-from app.core.logger import logger
 import certifi
+import logging
+
+# Create module-local logger
+logger = logging.getLogger(__name__)
 
 
 class MongoDB:
@@ -13,11 +16,15 @@ class MongoDB:
         self.client = None
         self.db = None
 
-        # Collections
-        self.students = None
-        self.courses = None
-        self.lecturers = None
-        self.enrollments = None  # factEnrollments
+        # Dimension & fact collections
+        self.dim_students = None
+        self.dim_courses = None
+        self.dim_lecturers = None
+        self.fact_enrollments = None
+
+        # ML + Analytics collections
+        self.predictions = None
+        self.aggregates = None
 
         self.connect()
 
@@ -47,18 +54,22 @@ class MongoDB:
             # Select DB
             self.db = self.client[settings.MONGO_DB_NAME]
 
-            # Initialize collections safely
-            self.students = self.db.get_collection(settings.MONGO_COLLECTION_STUDENTS)
-            self.courses = self.db.get_collection(settings.MONGO_COLLECTION_COURSES)
-            self.lecturers = self.db.get_collection(settings.MONGO_COLLECTION_LECTURERS)
-            self.enrollments = self.db.get_collection(settings.MONGO_COLLECTION_FACTS)
+            # ------------------------------------------------------
+            # Initialize collections
+            # ------------------------------------------------------
+            self.dim_students = self.db.get_collection("dimStudents")
+            self.dim_courses = self.db.get_collection("dimCourses")
+            self.dim_lecturers = self.db.get_collection("dimLecturers")
+            self.fact_enrollments = self.db.get_collection("factEnrollments")
+
+            # ML & Analytics
+            self.predictions = self.db.get_collection("predictions")
+            self.aggregates = self.db.get_collection("aggregates")
 
             logger.info(
-                f"🍃 MongoDB collections initialized: "
-                f"{settings.MONGO_COLLECTION_STUDENTS}, "
-                f"{settings.MONGO_COLLECTION_COURSES}, "
-                f"{settings.MONGO_COLLECTION_LECTURERS}, "
-                f"{settings.MONGO_COLLECTION_FACTS}"
+                "🍃 Mongo collections initialized: "
+                "dimStudents, dimCourses, dimLecturers, factEnrollments, "
+                "predictions, aggregates"
             )
 
         except Exception as e:
@@ -70,20 +81,15 @@ class MongoDB:
     # 🔁 UTILITY: SAFE UPSERT
     # --------------------------------------------------------
     def insert_safe(self, collection, data: dict):
-        """
-        Insert or update document based on `id`.
-        This prevents duplicates and keeps data up-to-date.
-        """
+        """Insert or update based on `id`."""
         if not collection or not data:
             return
 
-        if "id" not in data:
-            logger.warning("⚠ insert_safe called without 'id'. Skipping.")
-            return
+        key = "id" if "id" in data else "_id"
 
         try:
             collection.update_one(
-                {"id": data["id"]},
+                {key: data[key]},
                 {"$set": data},
                 upsert=True
             )
@@ -91,26 +97,76 @@ class MongoDB:
             logger.error(f"❌ Mongo upsert failed: {e}")
 
     # --------------------------------------------------------
+    # 🔁 BULK INSERTS (for ETL)
+    # --------------------------------------------------------
+    def bulk_insert(self, collection, data_list: list):
+        """Safe bulk insert for analytics and predictions."""
+        if not data_list:
+            return
+
+        try:
+            collection.delete_many({})     # wipe old batch
+            collection.insert_many(data_list)
+        except Exception as e:
+            logger.error(f"❌ Mongo bulk insert failed: {e}")
+
+    # --------------------------------------------------------
     # 🔁 SYNC HELPERS (SQL → Mongo)
     # --------------------------------------------------------
-    def sync_course(self, course_dict):
-        """Sync a course from SQL to Mongo."""
-        self.insert_safe(self.courses, course_dict)
-
     def sync_student(self, student_dict):
-        """Sync a student from SQL to Mongo."""
-        self.insert_safe(self.students, student_dict)
+        self.insert_safe(self.dim_students, student_dict)
+
+    def sync_course(self, course_dict):
+        self.insert_safe(self.dim_courses, course_dict)
 
     def sync_lecturer(self, lecturer_dict):
-        """Sync a lecturer from SQL to Mongo."""
-        self.insert_safe(self.lecturers, lecturer_dict)
+        self.insert_safe(self.dim_lecturers, lecturer_dict)
 
     def sync_enrollment(self, enr_dict):
-        """
-        Sync an enrollment record (Fact table).
-        This is what analytics uses.
-        """
-        self.insert_safe(self.enrollments, enr_dict)
+        self.insert_safe(self.fact_enrollments, enr_dict)
+
+    # --------------------------------------------------------
+    # 🔮 ML SUPPORT
+    # --------------------------------------------------------
+    def save_prediction(self, pred_dict):
+        if not pred_dict:
+            return
+        try:
+            self.predictions.update_one(
+                {"StudentID": pred_dict["StudentID"]},
+                {"$set": pred_dict},
+                upsert=True
+            )
+        except Exception as e:
+            logger.error(f"❌ Failed saving prediction: {e}")
+
+    def save_predictions_batch(self, pred_list):
+        self.bulk_insert(self.predictions, pred_list)
+
+    # --------------------------------------------------------
+    # 📊 ANALYTICS SUPPORT
+    # --------------------------------------------------------
+    def save_aggregate(self, doc):
+        if not doc:
+            return
+        try:
+            self.aggregates.insert_one(doc)
+        except Exception as e:
+            logger.error(f"❌ Failed saving aggregate: {e}")
+
+    def replace_aggregates(self, doc_list):
+        self.bulk_insert(self.aggregates, doc_list)
+
+    # --------------------------------------------------------
+    # ⚡ REALTIME SUPPORT (Change Streams)
+    # --------------------------------------------------------
+    def watch_changes(self, collection_name):
+        try:
+            collection = self.db.get_collection(collection_name)
+            return collection.watch(full_document='updateLookup')
+        except Exception as e:
+            logger.error(f"❌ Change stream failed: {e}")
+            return None
 
 
 # --------------------------------------------------------

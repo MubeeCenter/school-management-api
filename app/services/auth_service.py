@@ -1,3 +1,5 @@
+# app/services/auth_service.py
+
 from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -12,10 +14,9 @@ class AuthService:
         self.db = db
 
     # ----------------------------------------
-    # Student Self-Registration
+    # Student Self-Registration OR Admin Test-Registration
     # ----------------------------------------
     def register_user(self, user: UserCreate) -> UserOut:
-        # Check if username already exists
         existing = (
             self.db.query(UserModel)
             .filter(UserModel.username == user.username)
@@ -24,7 +25,29 @@ class AuthService:
         if existing:
             raise HTTPException(status_code=400, detail="Username already registered")
 
-        # Ensure student record exists in 'students' table
+        # Admin or lecturer registration (tests or admin onboarding)
+        if user.role != "student":
+            new_user = UserModel(
+                username=user.username,
+                password=hash_password(user.password),
+                role=user.role
+            )
+
+            try:
+                self.db.add(new_user)
+                self.db.commit()
+                self.db.refresh(new_user)
+            except Exception as e:
+                self.db.rollback()
+                raise HTTPException(status_code=500, detail=str(e))
+
+            return UserOut(
+                id=new_user.id,
+                username=new_user.username,
+                role=new_user.role
+            )
+
+        # Student registration must match existing Student table
         student = (
             self.db.query(Student)
             .filter(Student.username == user.username)
@@ -33,13 +56,12 @@ class AuthService:
         if not student:
             raise HTTPException(
                 status_code=400,
-                detail="Student record not found. Contact the administrator."
+                detail="Student record not found. Contact administrator."
             )
 
-        # Create user
         new_user = UserModel(
             username=user.username,
-            password=hash_password(user.password),  # SAFE: hash_password handles 72-byte limit
+            password=hash_password(user.password),
             role="student"
         )
 
@@ -51,7 +73,6 @@ class AuthService:
             # Link student → user
             student.user_id = new_user.id
             self.db.commit()
-
         except Exception as e:
             self.db.rollback()
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
@@ -63,31 +84,23 @@ class AuthService:
         )
 
     # ----------------------------------------
-    # LOGIN (OAuth2PasswordRequestForm)
+    # LOGIN
     # ----------------------------------------
     def login_user(self, creds: OAuth2PasswordRequestForm):
-        """
-        Supports Swagger OAuth2 login form:
-            username=...
-            password=...
-        """
-
         user = (
             self.db.query(UserModel)
             .filter(UserModel.username == creds.username)
             .first()
         )
-
         if not user:
             raise HTTPException(status_code=400, detail="Invalid username or password")
 
-        # SAFE: verify_password handles truncation and bcrypt limits
         if not verify_password(creds.password, user.password):
             raise HTTPException(status_code=400, detail="Invalid username or password")
 
-        # Create token
         token = create_access_token(
-            {"sub": user.username, "role": user.role}
+            subject=user.username,
+            role=user.role
         )
 
         return {
@@ -97,7 +110,7 @@ class AuthService:
         }
 
     # ----------------------------------------
-    # ADMIN CREATES OTHER USERS (Lecturers/Admins)
+    # ADMIN-ONLY USER CREATION
     # ----------------------------------------
     def admin_register_user(self, user: UserCreate) -> UserOut:
         existing = (
@@ -111,14 +124,13 @@ class AuthService:
         new_user = UserModel(
             username=user.username,
             role=user.role,
-            password=hash_password(user.password)   # SAFE
+            password=hash_password(user.password)
         )
 
         try:
             self.db.add(new_user)
             self.db.commit()
             self.db.refresh(new_user)
-
         except Exception as e:
             self.db.rollback()
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
